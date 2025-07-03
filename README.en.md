@@ -11,7 +11,6 @@
 <p align="center">
   <a href="#-about-the-project">About</a> •
   <a href="#-key-features">Features</a> •
-  <a href="#-gallery">Gallery</a> •
   <a href="#-technologies-used">Technologies</a> •
   <a href="#-how-to-run">Run</a> •
   <a href="#-author">Author</a>
@@ -40,7 +39,6 @@ The application allows you to:
 - **In-depth Analysis**: Evaluate the quality of your data with built-in fit statistics (Infit/Outfit).
 - **Clear Visualization**: An interactive Wright Map for easy comparison of ability and difficulty distributions.
 - **Modern Interface**: A pleasant and responsive UI built with `JavaFX` and `AtlantaFX`.
-- **Cross-Platform**: Works on Windows, macOS, and Linux.
 
 ## 🛠️ Technologies Used
 
