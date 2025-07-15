@@ -19,5 +19,6 @@ module RaschModelCalculator {
     exports miroshka.rasch.logic;
     exports miroshka.rasch.model;
     exports miroshka.rasch.view;
+    exports miroshka.rasch.utils;
     exports miroshka.rasch;
 } 

@@ -27,6 +27,11 @@
                         <Font name="System Bold" size="20.0" />
                     </font>
                 </Label>
+                <Label styleClass="version-label" fx:id="versionLabel" text="v1.0.1" style="-fx-text-fill: #B0C4DE; -fx-padding: 0 0 0 10;">
+                    <font>
+                        <Font size="12.0" />
+                    </font>
+                </Label>
             </HBox>
             <Label fx:id="filePathLabel" styleClass="file-path-label" text="Файл не выбран">
                 <VBox.margin>
@@ -81,7 +86,6 @@
                                             <Label text="Нет данных для отображения. Загрузите файл."/>
                                         </placeholder>
                                         <columns>
-                                            <!-- Существующие колонки остаются без изменений -->
                                         </columns>
                                     </TableView>
                                 </VBox>
@@ -114,6 +118,11 @@
                 <Button fx:id="loadButton" onAction="#handleLoadExcel" styleClass="action-button" text="Загрузить файл">
                     <tooltip>
                         <Tooltip text="Загрузить данные из файла Excel или CSV" />
+                    </tooltip>
+                </Button>
+                <Button fx:id="exportButton" onAction="#handleExportToWord" styleClass="action-button" text="Экспорт в Word">
+                    <tooltip>
+                        <Tooltip text="Экспортировать данные в документ Word" />
                     </tooltip>
                 </Button>
                 <Button onAction="#handleExit" styleClass="secondary-button" text="Выход" />

@@ -1,8 +1,12 @@
 package miroshka.rasch.controller;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.DecimalFormat;
+import java.util.ResourceBundle;
 
 import javafx.animation.FadeTransition;
 import javafx.application.Platform;
@@ -32,11 +36,8 @@ import miroshka.rasch.logic.RaschModel;
 import miroshka.rasch.logic.RaschModelProcessor;
 import miroshka.rasch.model.Item;
 import miroshka.rasch.model.Person;
+import miroshka.rasch.utils.WordExporter;
 import miroshka.rasch.view.WrightMapRenderer;
-
-import java.awt.Desktop;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 public class MainController {
     @FXML
@@ -44,6 +45,12 @@ public class MainController {
     
     @FXML
     private Button loadButton;
+
+    @FXML
+    private Button exportButton;
+    
+    @FXML
+    private Label versionLabel;
 
     @FXML
     private Hyperlink githubLink;
@@ -72,6 +79,16 @@ public class MainController {
         initializePersonTable();
         initializeItemTable();
         setupWrightMapResizeListeners();
+        
+        try {
+            ResourceBundle appBundle = ResourceBundle.getBundle("application");
+            String version = appBundle.getString("version");
+            if (versionLabel != null) {
+                versionLabel.setText("v" + version);
+            }
+        } catch (Exception e) {
+            System.out.println("Не удалось загрузить версию приложения: " + e.getMessage());
+        }
     }
 
     private void initializePersonTable() {
@@ -406,5 +423,59 @@ public class MainController {
     @FXML
     private void handleExit(ActionEvent event) {
         Platform.exit();
+    }
+
+    @FXML
+    private void handleExportToWord(ActionEvent event) {
+        if (personAbilityTable.getItems() == null || personAbilityTable.getItems().isEmpty()) {
+            showError("Нет данных для экспорта", "Сначала загрузите данные из файла.");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Сохранить Word документ");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Документ Word", "*.docx"));
+        fileChooser.setInitialFileName("abilities_export.docx");
+        
+        Stage stage = (Stage) exportButton.getScene().getWindow();
+        File selectedFile = fileChooser.showSaveDialog(stage);
+        
+        if (selectedFile != null) {
+            try {
+                double[] abilities = personAbilityTable.getItems().stream()
+                        .mapToDouble(Person::getAbility).toArray();
+                
+                WordExporter.exportAbilitiesToWord(abilities, selectedFile);
+                showSuccess("Экспорт завершен", "Данные успешно экспортированы в Word документ.");
+                
+                if (Desktop.isDesktopSupported()) {
+                    new Thread(() -> {
+                        try {
+                            Desktop.getDesktop().open(selectedFile);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }).start();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                showError("Ошибка экспорта", "Не удалось экспортировать данные: " + e.getMessage());
+            }
+        }
+    }
+    
+    private void showSuccess(String title, String message) {
+        Alert alert = new Alert(AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        
+        Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
+        if (stage != null && stage.getScene() != null) {
+            stage.getScene().getStylesheets().add(getClass().getResource("/styles/modern-style.css").toExternalForm());
+            alert.getDialogPane().getStyleClass().add("modern-alert");
+        }
+        
+        alert.showAndWait();
     }
 } 
