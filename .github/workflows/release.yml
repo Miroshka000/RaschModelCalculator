@@ -1,0 +1,210 @@
+name: 🚀 Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch: 
+
+env:
+  JAVA_VERSION: '17'
+  JAVA_DISTRIBUTION: 'temurin'
+
+jobs:
+  build-and-release:
+    name: 🏗️ Build Application
+    runs-on: windows-latest
+    
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: ☕ Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+      - name: 🐘 Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: wrapper
+
+      - name: 🔧 Make Gradlew Executable
+        run: chmod +x ./gradlew
+        shell: bash
+
+      - name: 📦 Cache Gradle Dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: 🏷️ Extract Version from Tag
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            VERSION="development"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
+        shell: bash
+
+      - name: 📝 Update Version in Build File
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          sed -i "s/version = \".*\"/version = \"$VERSION\"/" build.gradle.kts
+          echo "Updated version to: $VERSION"
+        shell: bash
+
+      - name: 📝 Update Application Properties
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          echo "version=$VERSION" > src/main/resources/application.properties
+          echo "Updated application.properties with version: $VERSION"
+        shell: bash
+
+      - name: 🧪 Run Tests
+        run: ./gradlew test
+        shell: bash
+
+      - name: 🔍 Generate Test Report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: 📊 Test Results
+          path: build/test-results/test/*.xml
+          reporter: java-junit
+
+      - name: 🏗️ Build Application
+        run: ./gradlew clean build
+        shell: bash
+
+      - name: 📦 Create JPackage Distribution
+        run: ./gradlew jpackage
+        shell: bash
+
+      - name: 📁 Prepare Release Assets
+        run: |
+          mkdir -p release-assets
+          
+          # Копируем исполняемый файл
+          if [ -f "build/jpackage/RaschModelCalculator-${{ steps.version.outputs.VERSION }}.exe" ]; then
+            cp "build/jpackage/RaschModelCalculator-${{ steps.version.outputs.VERSION }}.exe" "release-assets/"
+            echo "✅ Copied installer executable"
+          else
+            echo "❌ Installer executable not found"
+            ls -la build/jpackage/
+          fi
+          
+          # Копируем JAR файл
+          if [ -f "build/libs/RaschModelCalculator-${{ steps.version.outputs.VERSION }}.jar" ]; then
+            cp "build/libs/RaschModelCalculator-${{ steps.version.outputs.VERSION }}.jar" "release-assets/"
+            echo "✅ Copied JAR file"
+          else
+            echo "❌ JAR file not found"
+            ls -la build/libs/
+          fi
+          
+          # Создаем чексуммы
+          cd release-assets
+          sha256sum * > checksums.txt
+          cd ..
+          
+          echo "📋 Release assets prepared:"
+          ls -la release-assets/
+        shell: bash
+
+      - name: 📄 Generate Release Notes
+        id: release_notes
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          RELEASE_NOTES="## 🎉 Rasch Model Calculator v$VERSION
+
+          ### ✨ Новые возможности
+          - Современный игровой интерфейс с градиентами и эффектами
+          - Система автообновления с GitHub Releases
+          - Улучшенные карточки статистики на dashboard
+          - Анимации и современные переходы
+          - Обновленная навигация с иконками
+
+          ### 🔧 Технические улучшения
+          - Переработанная архитектура UI компонентов
+          - Асинхронная обработка операций
+          - Улучшенная обработка ошибок
+          - Оптимизированная производительность
+
+          ### 📦 Что включено
+          - **RaschModelCalculator-$VERSION.exe** - Установщик для Windows
+          - **RaschModelCalculator-$VERSION.jar** - JAR файл для всех платформ
+          - **checksums.txt** - Контрольные суммы файлов
+
+          ### 💻 Системные требования
+          - Windows 10 или новее
+          - Java 17+ (для JAR версии)
+          - 4 ГБ оперативной памяти
+          - 100 МБ свободного места
+
+          ### 🔄 Автообновление
+          Эта версия поддерживает автоматическое обновление. Приложение будет проверять наличие новых версий при запуске.
+
+          ---
+          💻 Создано с ❤️ Miroshka"
+
+          # Сохраняем в файл и переменную
+          echo "$RELEASE_NOTES" > release_notes.md
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "RELEASE_NOTES<<$EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
+          echo "$EOF" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: 🚀 Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          name: "🎯 Rasch Model Calculator v${{ steps.version.outputs.VERSION }}"
+          body: ${{ steps.release_notes.outputs.RELEASE_NOTES }}
+          files: |
+            release-assets/*
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📊 Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: rasch-calculator-${{ steps.version.outputs.VERSION }}
+          path: |
+            release-assets/
+            build/reports/
+          retention-days: 30
+
+      - name: 🧹 Cleanup Build Cache
+        run: |
+          ./gradlew --stop
+          rm -rf ~/.gradle/caches/build-cache-*
+        shell: bash
+
+  notify-success:
+    name: 📢 Notification
+    runs-on: ubuntu-latest
+    needs: build-and-release
+    if: success() && startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+      - name: 🎉 Success Notification
+        run: |
+          echo "🎉 Release created successfully!"
+          echo "🔗 Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
+          echo "📥 Users can now download and auto-update will detect this version"

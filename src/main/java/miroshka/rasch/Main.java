@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
+import atlantafx.base.theme.NordDark;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -24,6 +25,8 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
+            Application.setUserAgentStylesheet(new NordDark().getUserAgentStylesheet());
+            
             URL fxmlUrl = Main.class.getResource(FXML_PATH);
             if (fxmlUrl == null) {
                 throw new IOException("Cannot find FXML file: " + FXML_PATH);
@@ -46,7 +49,9 @@ public class Main extends Application {
         Scene scene = new Scene(root, WINDOW_WIDTH, WINDOW_HEIGHT);
         URL cssUrl = Main.class.getResource(CSS_PATH);
         if (cssUrl != null) {
-            scene.getStylesheets().add(cssUrl.toExternalForm());
+            String cssPath = cssUrl.toExternalForm();
+            scene.getStylesheets().add(cssPath);
+            System.out.println("CSS loaded successfully: " + cssPath);
         } else {
             System.out.println("CSS file not found: " + CSS_PATH);
         }

@@ -3,9 +3,8 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.Menu?>
-<?import javafx.scene.control.MenuBar?>
-<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TableView?>
@@ -13,123 +12,224 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.control.Hyperlink?>
-<?import javafx.scene.layout.Region?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.shape.Rectangle?>
 
 <BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="miroshka.rasch.controller.MainController">
     <top>
-        <VBox styleClass="header-container">
-            <HBox styleClass="title-container" alignment="CENTER_LEFT">
-                <Label styleClass="app-title" text="Rasch Model Calculator">
-                    <font>
-                        <Font name="System Bold" size="20.0" />
-                    </font>
-                </Label>
-                <Label styleClass="version-label" fx:id="versionLabel" text="v1.0.1" style="-fx-text-fill: #B0C4DE; -fx-padding: 0 0 0 10;">
-                    <font>
-                        <Font size="12.0" />
-                    </font>
-                </Label>
-            </HBox>
-            <Label fx:id="filePathLabel" styleClass="file-path-label" text="Файл не выбран">
-                <VBox.margin>
-                    <Insets bottom="5.0" top="5.0" />
-                </VBox.margin>
-            </Label>
+        <VBox styleClass="main-header">
+            <VBox styleClass="header-content" spacing="15">
+                <HBox styleClass="title-row" alignment="CENTER_LEFT" spacing="20">
+                    <StackPane styleClass="app-icon-container">
+                        <Circle styleClass="app-icon-bg" radius="25"/>
+                        <Label styleClass="app-icon-text" text="R"/>
+                    </StackPane>
+                    
+                    <VBox spacing="5">
+                        <HBox alignment="CENTER_LEFT" spacing="15">
+                            <Label styleClass="app-title" text="Rasch Model Calculator"/>
+                            <Label styleClass="version-badge" fx:id="versionLabel" text="v1.0.4"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Button fx:id="updateButton" styleClass="update-button" text="Проверить обновления" onAction="#handleCheckUpdate" visible="false"/>
+                        </HBox>
+                        <Label styleClass="app-subtitle" text="Профессиональный анализ психометрических данных"/>
+                    </VBox>
+                </HBox>
+                
+                <HBox styleClass="status-bar" alignment="CENTER_LEFT" spacing="15">
+                    <Circle styleClass="status-indicator" fx:id="statusIndicator" radius="4"/>
+                    <Label fx:id="filePathLabel" styleClass="status-label" text="Готов к загрузке данных"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <ProgressBar fx:id="progressBar" styleClass="progress-indicator" visible="false" progress="0"/>
+                </HBox>
+            </VBox>
         </VBox>
     </top>
     <center>
-        <TabPane styleClass="main-tab-pane" tabClosingPolicy="UNAVAILABLE">
-            <tabs>
-                <Tab text="Уровни подготовки студентов">
-                    <content>
-                        <BorderPane styleClass="tab-content">
-                            <top>
-                                <HBox styleClass="section-header" alignment="CENTER_LEFT">
-                                    <Label text="Показатели уровней подготовки студентов" styleClass="section-title" />
-                                </HBox>
-                            </top>
-                            <center>
-                                <VBox styleClass="table-container">
-                                    <TableView fx:id="personAbilityTable" styleClass="data-table" VBox.vgrow="ALWAYS">
-                                        <columnResizePolicy>
-                                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                                        </columnResizePolicy>
-                                        <placeholder>
-                                            <Label text="Нет данных для отображения. Загрузите файл."/>
-                                        </placeholder>
-                                        <columns>
-                                        </columns>
-                                    </TableView>
-                                </VBox>
-                            </center>
-                        </BorderPane>
-                    </content>
-                </Tab>
-                <Tab text="Трудности заданий">
-                    <content>
-                        <BorderPane styleClass="tab-content">
-                            <top>
-                                <HBox styleClass="section-header" alignment="CENTER_LEFT">
-                                    <Label text="Показатели трудности заданий" styleClass="section-title" />
-                                </HBox>
-                            </top>
-                            <center>
-                                <VBox styleClass="table-container">
-                                    <TableView fx:id="itemDifficultyTable" styleClass="data-table" VBox.vgrow="ALWAYS">
-                                        <columnResizePolicy>
-                                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                                        </columnResizePolicy>
-                                        <placeholder>
-                                            <Label text="Нет данных для отображения. Загрузите файл."/>
-                                        </placeholder>
-                                        <columns>
-                                        </columns>
-                                    </TableView>
-                                </VBox>
-                            </center>
-                        </BorderPane>
-                    </content>
-                </Tab>
-                <Tab text="Карта Райта">
-                    <content>
-                        <BorderPane styleClass="tab-content">
-                            <top>
-                                <HBox styleClass="section-header" alignment="CENTER_LEFT">
-                                    <Label text="Item-Person Map (Карта Райта)" styleClass="section-title" />
-                                </HBox>
-                            </top>
-                            <center>
-                                <Pane fx:id="wrightMapPane" style="-fx-background-color: #1E2D3B;" VBox.vgrow="ALWAYS" />
-                            </center>
-                        </BorderPane>
-                    </content>
-                </Tab>
-            </tabs>
-        </TabPane>
+        <ScrollPane styleClass="scroll-pane" fitToWidth="true" fitToHeight="true">
+            <VBox styleClass="dashboard-container" spacing="15">
+                <HBox styleClass="overview-cards" spacing="15" alignment="CENTER">
+                    <StackPane styleClass="stat-card" fx:id="studentsCard">
+                        <VBox styleClass="card-content" alignment="CENTER" spacing="10">
+                            <Label styleClass="card-icon" text="👥"/>
+                            <Label styleClass="card-value" fx:id="studentsCount" text="0"/>
+                            <Label styleClass="card-label" text="Студентов"/>
+                        </VBox>
+                    </StackPane>
+                    
+                    <StackPane styleClass="stat-card" fx:id="itemsCard">
+                        <VBox styleClass="card-content" alignment="CENTER" spacing="10">
+                            <Label styleClass="card-icon" text="📝"/>
+                            <Label styleClass="card-value" fx:id="itemsCount" text="0"/>
+                            <Label styleClass="card-label" text="Заданий"/>
+                        </VBox>
+                    </StackPane>
+                    
+                    <StackPane styleClass="stat-card highlight-card" fx:id="reliabilityCard">
+                        <VBox styleClass="card-content" alignment="CENTER" spacing="10">
+                            <Label styleClass="card-icon" text="⚡"/>
+                            <Label styleClass="card-value" fx:id="reliabilityValue" text="--"/>
+                            <Label styleClass="card-label" text="Надежность"/>
+                        </VBox>
+                    </StackPane>
+                    
+                    <StackPane styleClass="stat-card" fx:id="fitCard">
+                        <VBox styleClass="card-content" alignment="CENTER" spacing="10">
+                            <Label styleClass="card-icon" text="🎯"/>
+                            <Label styleClass="card-value" fx:id="fitValue" text="--"/>
+                            <Label styleClass="card-label" text="Соответствие"/>
+                        </VBox>
+                    </StackPane>
+                </HBox>
+
+                <TabPane styleClass="dashboard-tabs" tabClosingPolicy="UNAVAILABLE">
+                    <tabs>
+                        <Tab text="📊 Студенты">
+                            <content>
+                                <StackPane styleClass="tab-card">
+                                    <VBox styleClass="table-section" spacing="20">
+                                        <HBox styleClass="section-header" alignment="CENTER_LEFT" spacing="15">
+                                            <Label styleClass="section-icon" text="👨‍🎓"/>
+                                            <Label text="Уровни подготовки студентов" styleClass="section-title"/>
+                                            <Region HBox.hgrow="ALWAYS"/>
+                                            <Button styleClass="export-mini-btn" text="📈" onAction="#handleExportPersons">
+                                                <tooltip><Tooltip text="Экспорт данных студентов"/></tooltip>
+                                            </Button>
+                                        </HBox>
+                                        
+                                        <StackPane styleClass="table-wrapper">
+                                            <TableView fx:id="personAbilityTable" styleClass="modern-table">
+                                                <columnResizePolicy>
+                                                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                                                </columnResizePolicy>
+                                                <placeholder>
+                                                    <VBox styleClass="empty-state" alignment="CENTER" spacing="15">
+                                                        <Label styleClass="empty-icon" text="📂"/>
+                                                        <Label styleClass="empty-title" text="Нет данных"/>
+                                                        <Label styleClass="empty-subtitle" text="Загрузите файл с данными для начала анализа"/>
+                                                    </VBox>
+                                                </placeholder>
+                                            </TableView>
+                                        </StackPane>
+                                    </VBox>
+                                </StackPane>
+                            </content>
+                        </Tab>
+                        
+                        <Tab text="📝 Задания">
+                            <content>
+                                <StackPane styleClass="tab-card">
+                                    <VBox styleClass="table-section" spacing="20">
+                                        <HBox styleClass="section-header" alignment="CENTER_LEFT" spacing="15">
+                                            <Label styleClass="section-icon" text="📋"/>
+                                            <Label text="Трудности заданий" styleClass="section-title"/>
+                                            <Region HBox.hgrow="ALWAYS"/>
+                                            <Button styleClass="export-mini-btn" text="📊" onAction="#handleExportItems">
+                                                <tooltip><Tooltip text="Экспорт данных заданий"/></tooltip>
+                                            </Button>
+                                        </HBox>
+                                        
+                                        <StackPane styleClass="table-wrapper">
+                                            <TableView fx:id="itemDifficultyTable" styleClass="modern-table">
+                                                <columnResizePolicy>
+                                                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                                                </columnResizePolicy>
+                                                <placeholder>
+                                                    <VBox styleClass="empty-state" alignment="CENTER" spacing="15">
+                                                        <Label styleClass="empty-icon" text="📂"/>
+                                                        <Label styleClass="empty-title" text="Нет данных"/>
+                                                        <Label styleClass="empty-subtitle" text="Загрузите файл с данными для начала анализа"/>
+                                                    </VBox>
+                                                </placeholder>
+                                            </TableView>
+                                        </StackPane>
+                                    </VBox>
+                                </StackPane>
+                            </content>
+                        </Tab>
+                        
+                        <Tab text="🗺️ Карта Райта">
+                            <content>
+                                <StackPane styleClass="tab-card">
+                                    <VBox styleClass="visualization-section" spacing="20">
+                                        <HBox styleClass="section-header" alignment="CENTER_LEFT" spacing="15">
+                                            <Label styleClass="section-icon" text="🎯"/>
+                                            <Label text="Item-Person Map (Карта Райта)" styleClass="section-title"/>
+                                            <Region HBox.hgrow="ALWAYS"/>
+                                            <Button styleClass="export-mini-btn" text="🖼️" onAction="#handleExportMap">
+                                                <tooltip><Tooltip text="Экспорт карты Райта"/></tooltip>
+                                            </Button>
+                                        </HBox>
+                                        
+                                        <StackPane styleClass="visualization-wrapper" VBox.vgrow="ALWAYS">
+                                            <Pane fx:id="wrightMapPane" styleClass="wright-map-canvas"/>
+                                            
+                                            <StackPane fx:id="mapLoadingOverlay" styleClass="loading-overlay" visible="false">
+                                                <VBox alignment="CENTER" spacing="20">
+                                                    <ProgressBar styleClass="loading-progress" progress="-1"/>
+                                                    <Label styleClass="loading-text" text="Построение карты..."/>
+                                                </VBox>
+                                            </StackPane>
+                                        </StackPane>
+                                    </VBox>
+                                </StackPane>
+                            </content>
+                        </Tab>
+                    </tabs>
+                </TabPane>
+            </VBox>
+        </ScrollPane>
     </center>
     <bottom>
-        <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 10; -fx-background-color: #16222E; -fx-border-color: #2A3B4D; -fx-border-width: 1 0 0 0;">
-            <children>
-                <Hyperlink fx:id="githubLink" onAction="#handleGitHubLink" text="Создано Miroshka" style="-fx-text-fill: #B0C4DE;"/>
+        <HBox styleClass="main-footer" alignment="CENTER" spacing="20">
+                <HBox alignment="CENTER_LEFT" spacing="15">
+                    <StackPane styleClass="author-badge">
+                        <HBox alignment="CENTER_LEFT" spacing="8">
+                            <Label styleClass="author-icon" text="💻"/>
+                            <Hyperlink fx:id="githubLink" onAction="#handleGitHubLink" 
+                                       text="Создано Miroshka" styleClass="author-link"/>
+                        </HBox>
+                    </StackPane>
+                </HBox>
+                
                 <Region HBox.hgrow="ALWAYS" />
-                <Button fx:id="loadButton" onAction="#handleLoadExcel" styleClass="action-button" text="Загрузить файл">
-                    <tooltip>
-                        <Tooltip text="Загрузить данные из файла Excel или CSV" />
-                    </tooltip>
-                </Button>
-                <Button fx:id="exportButton" onAction="#handleExportToWord" styleClass="action-button" text="Экспорт в Word">
-                    <tooltip>
-                        <Tooltip text="Экспортировать данные в документ Word" />
-                    </tooltip>
-                </Button>
-                <Button onAction="#handleExit" styleClass="secondary-button" text="Выход" />
-            </children>
+                
+                <HBox styleClass="action-panel" alignment="CENTER" spacing="15">
+                    <Button fx:id="loadButton" onAction="#handleLoadExcel" 
+                            styleClass="primary-action-btn" text="📁 Загрузить данные">
+                        <tooltip>
+                            <Tooltip text="Загрузить данные из файла Excel или CSV" />
+                        </tooltip>
+                    </Button>
+                    
+                    <Button fx:id="exportButton" onAction="#handleExportToWord" 
+                            styleClass="secondary-action-btn" text="📄 Word">
+                        <tooltip>
+                            <Tooltip text="Экспорт в документ Word" />
+                        </tooltip>
+                    </Button>
+                    
+                    <Button fx:id="exportAllButton" onAction="#handleExportAllData" 
+                            styleClass="secondary-action-btn" text="📊 Экспорт">
+                        <tooltip>
+                            <Tooltip text="Экспортировать все данные с выбором формата" />
+                        </tooltip>
+                    </Button>
+                    
+                    <StackPane styleClass="exit-btn-container">
+                        <Button onAction="#handleExit" styleClass="exit-button" text="✕">
+                            <tooltip>
+                                <Tooltip text="Выход из приложения" />
+                            </tooltip>
+                        </Button>
+                    </StackPane>
+                </HBox>
         </HBox>
     </bottom>
-    <padding>
-        <Insets bottom="0" left="0" right="0" top="0" />
-    </padding>
 </BorderPane> 
