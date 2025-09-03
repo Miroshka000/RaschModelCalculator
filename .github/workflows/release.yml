@@ -41,8 +41,20 @@ jobs:
         with:
           gradle-version: wrapper
 
-      - name: 🔧 Make Gradlew Executable
-        run: chmod +x ./gradlew
+      - name: 🔧 Setup Gradle
+        run: |
+          # Сделать gradlew исполняемым
+          chmod +x ./gradlew
+          
+          # Проверить наличие wrapper jar
+          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
+            echo "❌ gradle-wrapper.jar not found, downloading..."
+            # Скачать wrapper jar если отсутствует
+            mkdir -p gradle/wrapper
+            curl -L -o gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/v8.13/gradle/wrapper/gradle-wrapper.jar
+          fi
+          
+          echo "✅ Gradle wrapper ready"
         shell: bash
 
       - name: 📦 Cache Gradle Dependencies
