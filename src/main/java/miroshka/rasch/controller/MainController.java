@@ -84,6 +84,9 @@ public class MainController {
     private Button updateButton;
     
     @FXML
+    private Label versionLabel;
+    
+    @FXML
     private Label studentsCount;
     
     @FXML
@@ -128,11 +131,17 @@ public class MainController {
     
     private String getCurrentVersion() {
         try {
-            java.util.ResourceBundle appBundle = java.util.ResourceBundle.getBundle("application");
-            return appBundle.getString("version");
+            java.util.Properties properties = new java.util.Properties();
+            try (java.io.InputStream input = getClass().getClassLoader().getResourceAsStream("application.properties")) {
+                if (input != null) {
+                    properties.load(input);
+                    return properties.getProperty("version", "1.0.5");
+                }
+            }
         } catch (Exception e) {
-            return "1.0.4";
+            System.err.println("Failed to load version from application.properties: " + e.getMessage());
         }
+        return "1.0.5";
     }
 
     @FXML
@@ -160,6 +169,8 @@ public class MainController {
         if (itemsCount != null) itemsCount.setText("0");
         if (reliabilityValue != null) reliabilityValue.setText("--");
         if (fitValue != null) fitValue.setText("--");
+        
+        if (versionLabel != null) versionLabel.setText("v" + getCurrentVersion());
         
         updateStatus("Готов к работе", StatusType.READY);
         
@@ -736,28 +747,30 @@ public class MainController {
             return;
         }
 
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Сохранить Word документ");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Документ Word", "*.docx"));
-        fileChooser.setInitialFileName("abilities_export.docx");
-        
-        Stage stage = (Stage) exportButton.getScene().getWindow();
-        File selectedFile = fileChooser.showSaveDialog(stage);
-        
-        if (selectedFile != null) {
-            try {
-                double[] abilities = personAbilityTable.getItems().stream()
-                        .mapToDouble(Person::getAbility).toArray();
-                
-                ExportManager.exportAbilitiesToWord(abilities, selectedFile);
-                showSuccess("Экспорт завершен", "Данные успешно экспортированы в Word документ.");
-                
-                openFileIfSupported(selectedFile);
-            } catch (IOException e) {
-                e.printStackTrace();
-                showError("Ошибка экспорта", "Не удалось экспортировать данные: " + e.getMessage());
+        ExportDialog.showFormatSelectionDialog().ifPresent(format -> {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Сохранить данные студентов");
+            fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter(format.getDescription(), "*." + format.getFileExtension())
+            );
+            fileChooser.setInitialFileName("persons_export." + format.getFileExtension());
+            
+            Stage stage = (Stage) exportButton.getScene().getWindow();
+            File selectedFile = fileChooser.showSaveDialog(stage);
+            
+            if (selectedFile != null) {
+                try {
+                    RaschModel.RaschResult result = extractResultFromTables();
+                    ExportManager.exportCompleteResults(result, selectedFile, format);
+                    
+                    showSuccess("Экспорт завершен", "Данные студентов успешно экспортированы в " + format.getDescription() + ".");
+                    openFileIfSupported(selectedFile);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    showError("Ошибка экспорта", "Не удалось экспортировать данные: " + e.getMessage());
+                }
             }
-        }
+        });
     }
     
     @FXML
@@ -989,27 +1002,30 @@ public class MainController {
             return;
         }
 
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Сохранить данные заданий");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV файлы", "*.csv"));
-        fileChooser.setInitialFileName("items_export.csv");
-        
-        Stage stage = (Stage) exportButton.getScene().getWindow();
-        File selectedFile = fileChooser.showSaveDialog(stage);
-        
-        if (selectedFile != null) {
-            try {
-                RaschModel.RaschResult result = extractResultFromTables();
-                ExportManager.exportCompleteResults(result, selectedFile, 
-                    miroshka.rasch.model.ExportFormat.CSV);
-                
-                showSuccess("Экспорт завершен", "Данные заданий успешно экспортированы в CSV.");
-                openFileIfSupported(selectedFile);
-            } catch (Exception e) {
-                e.printStackTrace();
-                showError("Ошибка экспорта", "Не удалось экспортировать данные: " + e.getMessage());
+        ExportDialog.showFormatSelectionDialog().ifPresent(format -> {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Сохранить данные заданий");
+            fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter(format.getDescription(), "*." + format.getFileExtension())
+            );
+            fileChooser.setInitialFileName("items_export." + format.getFileExtension());
+            
+            Stage stage = (Stage) exportButton.getScene().getWindow();
+            File selectedFile = fileChooser.showSaveDialog(stage);
+            
+            if (selectedFile != null) {
+                try {
+                    RaschModel.RaschResult result = extractResultFromTables();
+                    ExportManager.exportCompleteResults(result, selectedFile, format);
+                    
+                    showSuccess("Экспорт завершен", "Данные заданий успешно экспортированы в " + format.getDescription() + ".");
+                    openFileIfSupported(selectedFile);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    showError("Ошибка экспорта", "Не удалось экспортировать данные: " + e.getMessage());
+                }
             }
-        }
+        });
     }
     
     @FXML

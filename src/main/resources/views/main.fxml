@@ -34,7 +34,7 @@
                     <VBox spacing="5">
                         <HBox alignment="CENTER_LEFT" spacing="15">
                             <Label styleClass="app-title" text="Rasch Model Calculator"/>
-                            <Label styleClass="version-badge" fx:id="versionLabel" text="v1.0.4"/>
+                            <Label styleClass="version-badge" fx:id="versionLabel" text="v0.0.0"/>
                             <Region HBox.hgrow="ALWAYS"/>
                             <Button fx:id="updateButton" styleClass="update-button" text="Проверить обновления" onAction="#handleCheckUpdate" visible="false"/>
                         </HBox>
