@@ -84,7 +84,7 @@ tasks.withType<JavaCompile> {
 }
 
 tasks.register<Copy>("createReadme") {
-    val readmeFile = file("${buildDir}/resources/readme/README.txt")
+    val readmeFile = file("${layout.buildDirectory.get().asFile}/resources/readme/README.txt")
     readmeFile.parentFile.mkdirs()
     readmeFile.writeText("""
         RaschModelCalculator v${version}

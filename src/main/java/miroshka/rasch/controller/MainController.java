@@ -84,9 +84,6 @@ public class MainController {
     private Button updateButton;
     
     @FXML
-    private Label versionLabel;
-    
-    @FXML
     private Label studentsCount;
     
     @FXML
