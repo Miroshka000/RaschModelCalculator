@@ -40,16 +40,22 @@ public final class VersionManager {
     
     public UpdateInfo checkForUpdates() throws UpdateCheckException {
         try {
+            System.out.println("Checking for updates... Current version: " + currentVersion);
+
             String latestVersionJson = fetchLatestVersionInfo();
             String latestVersion = parseVersionFromJson(latestVersionJson);
             String downloadUrl = parseDownloadUrlFromJson(latestVersionJson);
-            
+
+            System.out.println("Latest version from GitHub: " + latestVersion);
+            System.out.println("Download URL: " + downloadUrl);
+
             if (latestVersion == null) {
                 throw new UpdateCheckException("Could not parse version from GitHub response");
             }
-            
+
             boolean isUpdateAvailable = isNewerVersion(latestVersion, currentVersion);
-            
+            System.out.println("Update available: " + isUpdateAvailable);
+
             return UpdateInfo.builder()
                 .currentVersion(currentVersion)
                 .latestVersion(latestVersion)
@@ -57,10 +63,12 @@ public final class VersionManager {
                 .downloadUrl(downloadUrl)
                 .releaseNotesUrl(GITHUB_RELEASES_URL + "/tag/" + latestVersion)
                 .build();
-                
+
         } catch (IOException e) {
+            System.err.println("Network error while checking for updates: " + e.getMessage());
             throw new UpdateCheckException("Network error while checking for updates", e);
         } catch (Exception e) {
+            System.err.println("Unexpected error during update check: " + e.getMessage());
             throw new UpdateCheckException("Unexpected error during update check", e);
         }
     }
@@ -68,19 +76,22 @@ public final class VersionManager {
     private String fetchLatestVersionInfo() throws IOException {
         URL url = URI.create(GITHUB_API_URL).toURL();
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        
+
         try {
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(TIMEOUT_MS);
             connection.setReadTimeout(TIMEOUT_MS);
             connection.setRequestProperty("Accept", "application/vnd.github.v3+json");
             connection.setRequestProperty("User-Agent", "RaschModelCalculator-UpdateChecker");
-            
+
+            System.out.println("Fetching data from: " + GITHUB_API_URL);
             int responseCode = connection.getResponseCode();
+            System.out.println("GitHub API response code: " + responseCode);
+
             if (responseCode != HttpURLConnection.HTTP_OK) {
                 throw new IOException("GitHub API returned status code: " + responseCode);
             }
-            
+
             StringBuilder response = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(
                     new InputStreamReader(connection.getInputStream(), "UTF-8"))) {
@@ -89,9 +100,12 @@ public final class VersionManager {
                     response.append(line);
                 }
             }
-            
-            return response.toString();
-            
+
+            String responseStr = response.toString();
+            System.out.println("GitHub API response length: " + responseStr.length() + " characters");
+
+            return responseStr;
+
         } finally {
             connection.disconnect();
         }
@@ -109,13 +123,20 @@ public final class VersionManager {
     }
     
     private String parseDownloadUrlFromJson(String json) {
-        Pattern urlPattern = Pattern.compile("\"browser_download_url\"\\s*:\\s*\"([^\"]*\\.exe)\"");
-        Matcher matcher = urlPattern.matcher(json);
-        
-        if (matcher.find()) {
-            return matcher.group(1);
+        Pattern exePattern = Pattern.compile("\"browser_download_url\"\\s*:\\s*\"([^\"]*\\.exe)\"");
+        Matcher exeMatcher = exePattern.matcher(json);
+
+        if (exeMatcher.find()) {
+            return exeMatcher.group(1);
         }
-        
+
+        Pattern jarPattern = Pattern.compile("\"browser_download_url\"\\s*:\\s*\"([^\"]*\\.jar)\"");
+        Matcher jarMatcher = jarPattern.matcher(json);
+
+        if (jarMatcher.find()) {
+            return jarMatcher.group(1);
+        }
+
         return null;
     }
     
