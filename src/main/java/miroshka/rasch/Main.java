@@ -11,6 +11,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
+import miroshka.rasch.utils.Logger;
 
 public class Main extends Application {
     private static final int WINDOW_WIDTH = 1224;
@@ -51,9 +52,9 @@ public class Main extends Application {
         if (cssUrl != null) {
             String cssPath = cssUrl.toExternalForm();
             scene.getStylesheets().add(cssPath);
-            System.out.println("CSS loaded successfully: " + cssPath);
+            Logger.log("CSS loaded successfully: " + cssPath);
         } else {
-            System.out.println("CSS file not found: " + CSS_PATH);
+            Logger.log("CSS file not found: " + CSS_PATH);
         }
         
         stage.setScene(scene);
@@ -64,17 +65,22 @@ public class Main extends Application {
     private void loadIcon(Stage stage) {
         try (InputStream iconStream = Main.class.getResourceAsStream(ICON_PATH)) {
             if (iconStream == null) {
-                System.out.println("Icon resource not found: " + ICON_PATH);
+                Logger.log("Icon resource not found: " + ICON_PATH);
                 return;
             }
             Image icon = new Image(iconStream);
             stage.getIcons().add(icon);
         } catch (Exception e) {
-            System.out.println("Error loading icon: " + e.getMessage());
+            Logger.error("Error loading icon: " + e.getMessage());
         }
     }
 
     public static void main(String[] args) {
+        // Инициализация логгера
+        Logger.initialize();
+
+        Logger.log("Starting Rasch Model Calculator...");
+
         launch(args);
     }
 } 

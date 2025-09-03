@@ -41,6 +41,7 @@ import miroshka.rasch.model.Item;
 import miroshka.rasch.model.Person;
 import miroshka.rasch.utils.AnimationManager;
 import miroshka.rasch.utils.ExportManager;
+import miroshka.rasch.utils.Logger;
 import miroshka.rasch.utils.UpdateManager;
 import miroshka.rasch.utils.VersionManager;
 import miroshka.rasch.view.ExportDialog;
@@ -155,7 +156,7 @@ public class MainController {
                 versionLabel.setText("v" + version);
             }
         } catch (Exception e) {
-            System.out.println("Не удалось загрузить версию приложения: " + e.getMessage());
+            Logger.error("Не удалось загрузить версию приложения: " + e.getMessage());
         }
         
         checkForUpdatesOnStartup();
@@ -438,7 +439,7 @@ public class MainController {
                             showSuccessAnimation();
                         });
                         
-                        System.out.println("Расчет завершен. Интерфейс обновлен.");
+                        Logger.log("Расчет завершен. Интерфейс обновлен.");
                     } else {
                         Platform.runLater(() -> {
                             showError("Ошибка данных", "Не удалось прочитать данные из файла или файл пуст.");
@@ -818,7 +819,7 @@ public class MainController {
                 try {
                     Desktop.getDesktop().open(file);
                 } catch (Exception e) {
-                    System.out.println("Не удалось открыть файл автоматически: " + e.getMessage());
+                    Logger.error("Не удалось открыть файл автоматически: " + e.getMessage());
                 }
             }).start();
         }
@@ -855,7 +856,7 @@ public class MainController {
                 });
             })
             .exceptionally(throwable -> {
-                System.out.println("Failed to check for updates on startup: " + throwable.getMessage());
+                Logger.error("Failed to check for updates on startup: " + throwable.getMessage());
                 return null;
             });
     }

@@ -132,11 +132,55 @@ public final class UpdateManager {
     
     private String getCurrentJarPath() {
         try {
-            return new File(UpdateManager.class.getProtectionDomain()
+            String path = new File(UpdateManager.class.getProtectionDomain()
                 .getCodeSource().getLocation().toURI()).getAbsolutePath();
+            Logger.log("Raw path from getCodeSource(): " + path);
+
+            if (path.contains("app") && path.contains("runtime")) {
+                String currentDir = System.getProperty("user.dir");
+                Logger.log("Current working directory: " + currentDir);
+
+                File exeFile = findExeFile(new File(currentDir));
+                if (exeFile != null) {
+                    Logger.log("Found EXE file: " + exeFile.getAbsolutePath());
+                    return exeFile.getAbsolutePath();
+                }
+            }
+
+            return path;
         } catch (Exception e) {
+            Logger.error("Exception getting JAR/EXE path: " + e.getMessage());
             return null;
         }
+    }
+
+    private File findExeFile(File directory) {
+        if (directory == null || !directory.exists() || !directory.isDirectory()) {
+            return null;
+        }
+
+        File[] files = directory.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.getName().toLowerCase().endsWith(".exe")) {
+                    return file;
+                }
+            }
+        }
+
+        File parentDir = directory.getParentFile();
+        if (parentDir != null) {
+            files = parentDir.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.getName().toLowerCase().endsWith(".exe")) {
+                        return file;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
     
     private void openInstaller(File updateFile) throws UpdateException {
@@ -190,21 +234,42 @@ public final class UpdateManager {
     
     public boolean isUpdateSupported() {
         try {
+            Logger.log("Checking if update is supported...");
+
             String jarPath = getCurrentJarPath();
+            Logger.log("Current JAR/EXE path: " + jarPath);
+
             if (jarPath == null) {
+                Logger.log("JAR/EXE path is null - update not supported");
                 return false;
             }
-            
+
             String os = System.getProperty("os.name").toLowerCase();
+            Logger.log("Operating system: " + os);
+
             if (!os.contains("windows")) {
+                Logger.log("Not Windows OS - update not supported");
                 return false;
             }
-            
+
             File jarFile = new File(jarPath);
+            Logger.log("JAR/EXE file exists: " + jarFile.exists());
+            Logger.log("JAR/EXE file path: " + jarFile.getAbsolutePath());
+
             File parentDir = jarFile.getParentFile();
-            return parentDir != null && parentDir.canWrite();
-            
+            Logger.log("Parent directory: " + (parentDir != null ? parentDir.getAbsolutePath() : "null"));
+
+            if (parentDir != null) {
+                Logger.log("Parent directory writable: " + parentDir.canWrite());
+            }
+
+            boolean supported = parentDir != null && parentDir.canWrite();
+            Logger.log("Update supported: " + supported);
+
+            return supported;
+
         } catch (Exception e) {
+            Logger.error("Exception checking update support: " + e.getMessage());
             return false;
         }
     }
@@ -257,7 +322,7 @@ public final class UpdateManager {
                 .filter(path -> path.getFileName().toString().startsWith(TEMP_DIR_PREFIX))
                 .forEach(this::deleteDirectoryQuietly);
         } catch (IOException e) {
-            System.err.println("Warning: Failed to cleanup old update files: " + e.getMessage());
+            Logger.error("Warning: Failed to cleanup old update files: " + e.getMessage());
         }
     }
     

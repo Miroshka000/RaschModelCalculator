@@ -40,21 +40,21 @@ public final class VersionManager {
     
     public UpdateInfo checkForUpdates() throws UpdateCheckException {
         try {
-            System.out.println("Checking for updates... Current version: " + currentVersion);
+            Logger.log("Checking for updates... Current version: " + currentVersion);
 
             String latestVersionJson = fetchLatestVersionInfo();
             String latestVersion = parseVersionFromJson(latestVersionJson);
             String downloadUrl = parseDownloadUrlFromJson(latestVersionJson);
 
-            System.out.println("Latest version from GitHub: " + latestVersion);
-            System.out.println("Download URL: " + downloadUrl);
+            Logger.log("Latest version from GitHub: " + latestVersion);
+            Logger.log("Download URL: " + downloadUrl);
 
             if (latestVersion == null) {
                 throw new UpdateCheckException("Could not parse version from GitHub response");
             }
 
             boolean isUpdateAvailable = isNewerVersion(latestVersion, currentVersion);
-            System.out.println("Update available: " + isUpdateAvailable);
+            Logger.log("Update available: " + isUpdateAvailable);
 
             return UpdateInfo.builder()
                 .currentVersion(currentVersion)
@@ -65,10 +65,10 @@ public final class VersionManager {
                 .build();
 
         } catch (IOException e) {
-            System.err.println("Network error while checking for updates: " + e.getMessage());
+            Logger.error("Network error while checking for updates: " + e.getMessage());
             throw new UpdateCheckException("Network error while checking for updates", e);
         } catch (Exception e) {
-            System.err.println("Unexpected error during update check: " + e.getMessage());
+            Logger.error("Unexpected error during update check: " + e.getMessage());
             throw new UpdateCheckException("Unexpected error during update check", e);
         }
     }
@@ -84,9 +84,9 @@ public final class VersionManager {
             connection.setRequestProperty("Accept", "application/vnd.github.v3+json");
             connection.setRequestProperty("User-Agent", "RaschModelCalculator-UpdateChecker");
 
-            System.out.println("Fetching data from: " + GITHUB_API_URL);
+            Logger.log("Fetching data from: " + GITHUB_API_URL);
             int responseCode = connection.getResponseCode();
-            System.out.println("GitHub API response code: " + responseCode);
+            Logger.log("GitHub API response code: " + responseCode);
 
             if (responseCode != HttpURLConnection.HTTP_OK) {
                 throw new IOException("GitHub API returned status code: " + responseCode);
@@ -102,7 +102,7 @@ public final class VersionManager {
             }
 
             String responseStr = response.toString();
-            System.out.println("GitHub API response length: " + responseStr.length() + " characters");
+            Logger.log("GitHub API response length: " + responseStr.length() + " characters");
 
             return responseStr;
 
