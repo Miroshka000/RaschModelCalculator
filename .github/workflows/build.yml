@@ -63,7 +63,7 @@ jobs:
           reporter: java-junit
 
       - name: 📊 Upload Test Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.6.2
         if: always()
         with:
           name: test-results-${{ matrix.os }}
@@ -132,7 +132,7 @@ jobs:
         shell: powershell
 
       - name: 📊 Upload Build Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: build-artifacts-${{ github.sha }}
           path: build-artifacts/
@@ -176,7 +176,7 @@ jobs:
         run: ./gradlew pmdMain || true
 
       - name: 📊 Upload Quality Reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.6.2
         if: always()
         with:
           name: quality-reports-${{ github.sha }}
