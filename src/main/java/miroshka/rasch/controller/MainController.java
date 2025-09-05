@@ -156,7 +156,7 @@ public class MainController {
                 versionLabel.setText("v" + version);
             }
         } catch (Exception e) {
-            Logger.error("Не удалось загрузить версию приложения: " + e.getMessage());
+            Logger.error("Failed to load application version: " + e.getMessage());
         }
         
         checkForUpdatesOnStartup();

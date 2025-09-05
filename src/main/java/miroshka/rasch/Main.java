@@ -76,11 +76,8 @@ public class Main extends Application {
     }
 
     public static void main(String[] args) {
-        // Инициализация логгера
         Logger.initialize();
-
         Logger.log("Starting Rasch Model Calculator...");
-
         launch(args);
     }
 } 

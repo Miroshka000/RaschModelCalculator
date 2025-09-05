@@ -132,54 +132,90 @@ public final class UpdateManager {
     
     private String getCurrentJarPath() {
         try {
-            String path = new File(UpdateManager.class.getProtectionDomain()
-                .getCodeSource().getLocation().toURI()).getAbsolutePath();
-            Logger.log("Raw path from getCodeSource(): " + path);
-
-            if (path.contains("app") && path.contains("runtime")) {
-                String currentDir = System.getProperty("user.dir");
-                Logger.log("Current working directory: " + currentDir);
-
-                File exeFile = findExeFile(new File(currentDir));
-                if (exeFile != null) {
-                    Logger.log("Found EXE file: " + exeFile.getAbsolutePath());
+            String executablePath = ProcessHandle.current()
+                .info()
+                .command()
+                .orElse("");
+                
+            if (!executablePath.isEmpty() && new File(executablePath).exists()) {
+                Logger.log("Found executable path from ProcessHandle: " + executablePath);
+                return executablePath;
+            }
+            
+            String javaCommand = System.getProperty("sun.java.command");
+            if (javaCommand != null && javaCommand.endsWith(".exe")) {
+                File exeFile = new File(javaCommand);
+                if (exeFile.exists()) {
+                    Logger.log("Found executable from sun.java.command: " + javaCommand);
                     return exeFile.getAbsolutePath();
                 }
             }
-
-            return path;
+            
+            String appImage = System.getProperty("jpackage.app-path");
+            if (appImage != null) {
+                File appFile = new File(appImage);
+                if (appFile.exists()) {
+                    Logger.log("Found app path from jpackage.app-path: " + appImage);
+                    return appFile.getAbsolutePath();
+                }
+            }
+            
+            URL location = UpdateManager.class.getProtectionDomain().getCodeSource().getLocation();
+            if (location != null && !"jrt".equals(location.getProtocol())) {
+                String path = new File(location.toURI()).getAbsolutePath();
+                Logger.log("Found path from code source: " + path);
+                return path;
+            }
+            
+            String currentDir = System.getProperty("user.dir");
+            File exeFile = findExecutableInDirectory(new File(currentDir));
+            if (exeFile != null) {
+                Logger.log("Found executable in current directory: " + exeFile.getAbsolutePath());
+                return exeFile.getAbsolutePath();
+            }
+            
+            Logger.log("Unable to determine executable path");
+            return null;
+            
         } catch (Exception e) {
-            Logger.error("Exception getting JAR/EXE path: " + e.getMessage());
+            Logger.error("Exception getting executable path: " + e.getMessage());
             return null;
         }
     }
 
-    private File findExeFile(File directory) {
+    private File findExecutableInDirectory(File directory) {
         if (directory == null || !directory.exists() || !directory.isDirectory()) {
             return null;
         }
 
-        File[] files = directory.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.getName().toLowerCase().endsWith(".exe")) {
-                    return file;
-                }
+        String[] executableNames = {
+            "RaschModelCalculator.exe",
+            "RaschCalculator.exe",
+            "Rasch.exe"
+        };
+        
+        for (String execName : executableNames) {
+            File execFile = new File(directory, execName);
+            if (execFile.exists() && execFile.isFile()) {
+                return execFile;
             }
         }
-
+        
+        File[] files = directory.listFiles((dir, name) -> 
+            name.toLowerCase().endsWith(".exe") && 
+            (name.toLowerCase().contains("rasch") || 
+             name.toLowerCase().contains("calculator"))
+        );
+        
+        if (files != null && files.length > 0) {
+            return files[0];
+        }
+        
         File parentDir = directory.getParentFile();
-        if (parentDir != null) {
-            files = parentDir.listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    if (file.getName().toLowerCase().endsWith(".exe")) {
-                        return file;
-                    }
-                }
-            }
+        if (parentDir != null && !parentDir.equals(directory)) {
+            return findExecutableInDirectory(parentDir);
         }
-
+        
         return null;
     }
     
@@ -236,11 +272,11 @@ public final class UpdateManager {
         try {
             Logger.log("Checking if update is supported...");
 
-            String jarPath = getCurrentJarPath();
-            Logger.log("Current JAR/EXE path: " + jarPath);
+            String executablePath = getCurrentJarPath();
+            Logger.log("Current executable path: " + executablePath);
 
-            if (jarPath == null) {
-                Logger.log("JAR/EXE path is null - update not supported");
+            if (executablePath == null || executablePath.isEmpty()) {
+                Logger.log("Executable path is empty - update not supported");
                 return false;
             }
 
@@ -252,21 +288,39 @@ public final class UpdateManager {
                 return false;
             }
 
-            File jarFile = new File(jarPath);
-            Logger.log("JAR/EXE file exists: " + jarFile.exists());
-            Logger.log("JAR/EXE file path: " + jarFile.getAbsolutePath());
+            File executableFile = new File(executablePath);
+            if (!executableFile.exists()) {
+                Logger.log("Executable file does not exist: " + executablePath);
+                return false;
+            }
+            
+            Logger.log("Executable file exists: " + executableFile.getAbsolutePath());
 
-            File parentDir = jarFile.getParentFile();
-            Logger.log("Parent directory: " + (parentDir != null ? parentDir.getAbsolutePath() : "null"));
-
-            if (parentDir != null) {
-                Logger.log("Parent directory writable: " + parentDir.canWrite());
+            File parentDir = executableFile.getParentFile();
+            if (parentDir == null) {
+                Logger.log("Parent directory is null");
+                return false;
+            }
+            
+            Logger.log("Parent directory: " + parentDir.getAbsolutePath());
+            boolean canWrite = parentDir.canWrite();
+            Logger.log("Parent directory writable: " + canWrite);
+            
+            if (!canWrite) {
+                File tempTestFile = new File(parentDir, ".update-test-" + System.currentTimeMillis());
+                try {
+                    if (tempTestFile.createNewFile()) {
+                        tempTestFile.delete();
+                        canWrite = true;
+                        Logger.log("Write test successful");
+                    }
+                } catch (IOException e) {
+                    Logger.log("Write test failed: " + e.getMessage());
+                }
             }
 
-            boolean supported = parentDir != null && parentDir.canWrite();
-            Logger.log("Update supported: " + supported);
-
-            return supported;
+            Logger.log("Update supported: " + canWrite);
+            return canWrite;
 
         } catch (Exception e) {
             Logger.error("Exception checking update support: " + e.getMessage());
