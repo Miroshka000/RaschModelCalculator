@@ -6,11 +6,16 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 
 public final class VersionManager {
     private static final String GITHUB_API_URL = "https://api.github.com/repos/Miroshka000/RaschModelCalculator/releases/latest";
@@ -77,6 +82,11 @@ public final class VersionManager {
         URL url = URI.create(GITHUB_API_URL).toURL();
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
+        if (connection instanceof HttpsURLConnection) {
+            HttpsURLConnection httpsConnection = (HttpsURLConnection) connection;
+            configureSSL(httpsConnection);
+        }
+
         try {
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(TIMEOUT_MS);
@@ -110,7 +120,33 @@ public final class VersionManager {
             connection.disconnect();
         }
     }
-    
+
+    private void configureSSL(HttpsURLConnection connection) {
+        try {
+            SSLContext sslContext = null;
+            try {
+                sslContext = SSLContext.getInstance("TLSv1.3");
+                Logger.log("Using TLS 1.3");
+            } catch (NoSuchAlgorithmException e) {
+                try {
+                    sslContext = SSLContext.getInstance("TLSv1.2");
+                    Logger.log("Using TLS 1.2");
+                } catch (NoSuchAlgorithmException e2) {
+                    Logger.log("Using default SSL context");
+                    return; // Use default SSL context
+                }
+            }
+
+            if (sslContext != null) {
+                sslContext.init(null, null, null);
+                connection.setSSLSocketFactory(sslContext.getSocketFactory());
+            }
+
+        } catch (KeyManagementException e) {
+            Logger.log("SSL configuration failed, using default: " + e.getMessage());
+        }
+    }
+
     private String parseVersionFromJson(String json) {
         Pattern tagNamePattern = Pattern.compile("\"tag_name\"\\s*:\\s*\"([^\"]+)\"");
         Matcher matcher = tagNamePattern.matcher(json);
